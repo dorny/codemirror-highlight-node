@@ -28,3 +28,9 @@ srcFiles.forEach( function(file) {
     assert.equal(result, expected);
   });
 });
+
+it('Handle source code with undefined mode', function() {
+    var source = '$ echo "test"';
+    var result = highlight(source);
+    assert.equal(result, source);
+});

@@ -1,6 +1,6 @@
 {
   "name": "codemirror-highlight-node",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Transforms source code into formatted HTML using Codemirror",
   "main": "index",
   "repository": {

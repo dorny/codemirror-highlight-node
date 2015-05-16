@@ -61,6 +61,12 @@ CodeMirror.highlightCode = function(code, modeSpec) {
   if ( typeof modeSpec === 'string') {
     modeSpec = CodeMirror.findModeByName(modeSpec);
   }
+
+  // do nothing when mode is unknown
+  if (modeSpec == null) {
+    return code;
+  }
+
   CodeMirror.loadMode(modeSpec.mode);
   return highlight(code, modeSpec.mime);
 }
