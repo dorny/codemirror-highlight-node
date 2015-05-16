@@ -1,0 +1,36 @@
+{
+  "name": "codemirror-highlight-node",
+  "version": "1.0.0",
+  "description": "Transforms source code into formatted HTML using Codemirror",
+  "main": "index",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dorny/codemirror-highlight-node"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "keywords": [
+    "codemirror",
+    "highlight"
+  ],
+  "author": "Michal Dorner <dorner.michal@gmail.com> (http://dorny.github.io/)",
+  "license": {
+    "type": "MIT",
+    "url": "https://raw.github.com/dorny/codemirror-highlight-node/master/LICENSE"
+  },
+  "bugs": {
+    "url": "https://github.com/dorny/codemirror-highlight-node/issues"
+  },
+  "homepage": "https://github.com/dorny/codemirror-highlight-node",
+  "dependencies": {
+    "codemirror": "^5.2.0",
+    "escape-html": "^1.0.1"
+  },
+  "devDependencies": {
+    "testit": "^2.0.2"
+  },
+  "scripts": {
+    "test": "node test"
+  }
+}
