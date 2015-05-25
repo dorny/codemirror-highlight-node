@@ -15,10 +15,7 @@
     "highlight"
   ],
   "author": "Michal Dorner <dorner.michal@gmail.com> (http://dorny.github.io/)",
-  "license": {
-    "type": "MIT",
-    "url": "https://raw.github.com/dorny/codemirror-highlight-node/master/LICENSE"
-  },
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/dorny/codemirror-highlight-node/issues"
   },
