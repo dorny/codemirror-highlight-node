@@ -1,81 +1,120 @@
+/*
+ * codemirror-highlight-node
+ * https://github.com/dorny/codemirror-highlight-node
+ *
+ * Copyright (c) 2015 Michal Dorner
+ * Licensed under the MIT license.
+ */
+
 'use strict';
 
-var fs = require('fs');
-var vm = require('vm');
-var path = require('path');
-var format = require('util').format;
-var resolve = require('resolve').sync;
 var escape = require('escape-html');
 var CodeMirror = require('codemirror/addon/runmode/runmode.node.js');
 
-var cache = {};
-cache[require.resolve('codemirror')] = CodeMirror;
+// load built in mode specs
+require('codemirror/mode/meta.js');
 
-// copy & pasted from https://github.com/ForbesLindesay/highlight-codemirror
-CodeMirror.loadMode = function (name) {
-  function loadFile(filename) {
-    if (filename in cache) {
-      return cache[filename];
-    }
-
-    var exports = (cache[filename] = {});
-    var moduleObject = {exports: exports};
-    function childRequire(name) {
-      if (/^codemirror/.test(name)) {
-        return loadFile(require.resolve(name));
-      }
-      else {
-        return loadFile(resolve(name, {basedir: path.dirname(filename)}));
-      }
-    }
-
-    var source = fs.readFileSync(filename, 'utf8');
-    vm.runInNewContext(source, { CodeMirror: CodeMirror, module: moduleObject, exports: exports, require: childRequire }, filename);
-    return (cache[filename] = moduleObject.exports);
+/**
+ * Loads mode into CodeMirror
+ * Look at https://github.com/codemirror/CodeMirror/tree/master/mode for list of built in modes
+ *
+ * @param {string} modeName - name of the mode
+ */
+CodeMirror.loadMode = function (modeName) {
+  if (!CodeMirror.modes[modeName]) {
+    require('codemirror/mode/' + modeName + '/' + modeName + '.js');
   }
-
-  return loadFile(/^[A-Za-z0-9]+$/.test(name) ? require.resolve('codemirror/mode/' + name + '/' + name + '.js') : path.resolve(name));
 };
 
-function highlight(string, modeSpec) {
+// format soruce code with <span class="...">
+function applyCodeHighlighting(string, modeSpec) {
   var html = '';
-  CodeMirror.runMode(string, modeSpec, function (text, style) {
-    if (text === '\n') {
-      html += '\n';
-      return;
-    }
+  var accum = '';
+  var curStyle = null;
 
-    var content = escape(text);
-    if (style) {
-      var className = 'cm-' + style.replace(/ +/g, ' cm-');
-      content = format('<span class="%s">%s</span>', className, content);
+  var flush = function() {
+    if (curStyle) {
+      html += '<span class="' + curStyle.replace(/(^|\s+)/g, "$1cm-") + '">' + escape(accum) + '</span>';
     }
-    html += content;
+    else {
+      html += escape(accum);
+    }
+  }
+
+  CodeMirror.runMode(string, modeSpec, function (text, style) {
+    if (style != curStyle) {
+      flush();
+      accum = text;
+      curStyle = style;
+    } else {
+      accum += text;
+    }
   });
 
+  flush();
   return html;
 };
 
-// main exported function
-CodeMirror.highlightCode = function(code, modeSpec) {
+// wrap already foramted source code with theme and optionally add line numbers
+function applyTheme(formatedCode, theme) {
+    var lines = formatedCode.split('\n');
+
+    return '<div class="CodeMirror cm-s-'+(theme.name || 'default')+'">\n'
+    +'  <div class="CodeMirror-scroll" draggable="false">\n'
+    +'    <div class="CodeMirror-sizer">\n'
+    +'      <div class="CodeMirror-lines">\n'
+    +'        <div class="CodeMirror-code">\n'
+    + lines.reduce( function(acum, line, i) {
+        if (theme.lineNumbers) {
+            acum += '          <div class="CodeMirror-gutter-wrapper">\n'
+                +   '            <div class="CodeMirror-linenumber CodeMirror-gutter-elt">' + i + '</div>\n'
+                +   '          </div>\n';
+        }
+        acum += '          <pre>'+line+'</pre>\n';
+        return acum;
+    }, '')
+    +'         </div>\n'
+    +'      </div>\n'
+    +'    </div>\n'
+    +'  </div>\n'
+    +'</div>\n';
+}
+
+/**
+ * Transforms source code into formatted HTML using Codemirror
+ *
+ * @param {string} code - source code
+ * @param {string | object} modeSpec - name or definiton of mode
+ * @param {string | object} theme - name of theme or object {name: <string>, lineNumbers: <bool>}
+ */
+CodeMirror.highlightCode = function(code, modeSpec, theme) {
+
   if ( typeof modeSpec === 'string') {
     modeSpec = CodeMirror.findModeByName(modeSpec);
   }
 
-  // do nothing when mode is unknown
-  if (modeSpec == null) {
-    return code;
+  var formatedCode;
+  if (modeSpec != null) {
+    CodeMirror.loadMode(modeSpec.mode);
+    formatedCode = applyCodeHighlighting(code, modeSpec.mime);
+  }
+  else {
+    formatedCode = code;
   }
 
-  CodeMirror.loadMode(modeSpec.mode);
-  return highlight(code, modeSpec.mime);
+  if (theme != null) {
+    if (typeof theme === 'string') {
+      theme = { name: theme, lineNumbers: false };
+    }
+
+    formatedCode = applyTheme(formatedCode, theme);
+  }
+
+  return formatedCode;
 }
 
 // re-export CodeMirror
 CodeMirror.highlightCode.CodeMirror = CodeMirror;
-
-// load built in mode specs
-CodeMirror.loadMode(require.resolve('codemirror/mode/meta.js'));
 
 // export highlightCode
 module.exports = CodeMirror.highlightCode;
